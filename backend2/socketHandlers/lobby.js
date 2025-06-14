@@ -54,7 +54,7 @@ export default function lobbyHandler(io, socket, prisma) {
   });
 
   // Присоединиться к лобби
-  socket.on('joinLobby', async ({ lobbyId }, cb) => {
+  socket.on('joinLobby', async ({ lobbyId }, cb = () => {}) => {
     const id = parseInt(lobbyId, 10);
     if (isNaN(id)) return cb({ error: 'Invalid lobbyId' });
 
