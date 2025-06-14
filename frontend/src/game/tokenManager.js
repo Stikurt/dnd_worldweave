@@ -44,13 +44,18 @@ export function initTokenManager({
       const { x: boardX, y: boardY } = canvasAPI.screenToWorld(x, y);
       socket.emit(
         "placeToken",
-        { lobbyId, resourceId: selectedImage?.src, x: boardX, y: boardY, radius, color: defaultColor },
+        {
+          lobbyId,
+          resourceId: selectedImage?.src,
+          x: boardX,
+          y: boardY,
+          radius,
+          color: defaultColor,
+        },
         (res) => {
-          if (!res || res.error) {
-            console.error("placeToken", res?.error);
-            return;
+          if (res?.error) {
+            console.error("placeToken", res.error);
           }
-          canvasAPI.addTokenWorld(boardX, boardY, defaultColor, radius, selectedImage?.src, res.placement.id);
         }
       );
     },
