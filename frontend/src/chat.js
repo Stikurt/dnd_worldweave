@@ -5,10 +5,10 @@ export function initChat(socket, lobbyId, chatBox, chatInput, sendBtn) {
 
   // 0) Входим в комнату лобби, чтобы получать real-time новые сообщения
   if (socket.connected) {
-    socket.emit('joinLobby', { lobbyId });
+    socket.emit('joinLobby', { lobbyId }, () => {});
   } else {
     socket.once('connect', () => {
-      socket.emit('joinLobby', { lobbyId });
+      socket.emit('joinLobby', { lobbyId }, () => {});
     });
   }
 

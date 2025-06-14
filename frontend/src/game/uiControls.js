@@ -7,27 +7,34 @@ export function initUIControls({
   tokenManager,
   canvas,
   canvasAPI,
+  socket,
+  lobbyId,
 }) {
   console.log("initUIControls initialized", { deleteTokenBtn, clearBoardBtn, canvasAPI, tokenManager });
 
   // Удалить выбранный токен
   deleteTokenBtn.addEventListener("click", () => {
     console.log("Delete button clicked");
-    if (canvasAPI && typeof canvasAPI.removeSelectedToken === "function") {
-      canvasAPI.removeSelectedToken();
-    } else {
-      console.error("canvasAPI.removeSelectedToken is not a function");
-    }
+    if (!canvasAPI || typeof canvasAPI.getSelectedToken !== "function") return;
+    const tok = canvasAPI.getSelectedToken();
+    if (!tok) return;
+    socket.emit("removeToken", { lobbyId, id: tok.id }, (res) => {
+      if (res?.error) {
+        console.error("removeToken", res.error);
+      } else {
+        canvasAPI.removeToken(tok.id);
+      }
+    });
   });
 
   // Очистить доску
   clearBoardBtn.addEventListener("click", () => {
     console.log("Clear Board button clicked");
-    if (canvasAPI && typeof canvasAPI.clearBoard === "function") {
-      canvasAPI.clearBoard();
-    } else {
-      console.error("canvasAPI.clearBoard is not a function");
-    }
+    if (!canvasAPI || typeof canvasAPI.getTokens !== "function") return;
+    canvasAPI.getTokens().forEach((t) => {
+      socket.emit("removeToken", { lobbyId, id: t.id }, () => {});
+    });
+    canvasAPI.clearBoard();
   });
 
   // Смена размера токена

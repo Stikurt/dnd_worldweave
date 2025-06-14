@@ -11,7 +11,8 @@ import { initDice }         from './dice.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // 1) Авторизация + Socket.IO
-  const token   = ensureAuth();
+  ensureAuth();
+  const token   = localStorage.getItem('jwt');
   const socket  = io({ auth: { token }, path: '/socket.io' });
   const params  = new URLSearchParams(window.location.search);
   const lobbyId = Number(params.get('lobbyId'));
@@ -19,11 +20,20 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Неверный lobbyId');
     return;
   }
+  let isMaster = false;
 
   // 1.1) Заходим в комнату
   socket.once('connect', () => {
     socket.emit('joinLobby', { lobbyId }, res => {
       if (res?.error) console.error('joinLobby:', res.error);
+      else {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        isMaster = payload.userId === res.masterId;
+        if (!isMaster) {
+          const c = document.getElementById('mapControls');
+          if (c) c.style.display = 'none';
+        }
+      }
     });
   });
 
@@ -34,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   const canvasAPI = initCanvas(canvasEl);
+  canvasAPI.onTokenMove(tok => {
+    socket.emit('moveToken', { lobbyId, id: tok.id, x: tok.x, y: tok.y }, () => {});
+  });
 
   // 3) Token Manager + UI Controls
   const tokenManager = initTokenManager({
@@ -41,7 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
     categorySelect: document.getElementById('tokenCategory'),
     sizeSelect:     document.getElementById('tokenSize'),
     socket,
-    lobbyId
+    lobbyId,
+    canvasAPI
   });
   initUIControls({
     deleteTokenBtn:     document.getElementById('deleteToken'),
@@ -56,6 +70,46 @@ document.addEventListener('DOMContentLoaded', () => {
     lobbyId
   });
 
+  const mapFile   = document.getElementById('mapFile');
+  const uploadMap = document.getElementById('uploadMap');
+  const mapList   = document.getElementById('mapList');
+
+  if (uploadMap && mapFile) {
+    uploadMap.addEventListener('click', () => {
+      if (!isMaster) return;
+      mapFile.click();
+    });
+
+    mapFile.addEventListener('change', () => {
+      if (!isMaster) return;
+      const file = mapFile.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const arr = Array.from(new Uint8Array(e.target.result));
+        socket.emit('uploadMap', { lobbyId, fileName: file.name, mimeType: file.type, fileBuffer: arr }, res => {
+          if (res?.error) console.error('uploadMap', res.error);
+        });
+      };
+      reader.readAsArrayBuffer(file);
+      mapFile.value = '';
+    });
+  }
+
+  socket.emit('getGameState', { lobbyId }, state => {
+    if (state && !state.error) {
+      state.maps?.forEach(m => {
+        canvasAPI.addMapWorld(m.url, m.id, m.x || 0, m.y || 0, m.scale || 1);
+        addMapToList(m);
+      });
+      state.placedTokens.forEach(p => {
+        canvasAPI.addTokenWorld(p.x, p.y, p.color || '#000', p.radius || 20, p.resourceId, p.id);
+      });
+    } else if (state?.error) {
+      console.error('getGameState', state.error);
+    }
+  });
+
   // 4) ВАЖНО: оборачиваем socket только для chat.js
   const chatBox   = document.getElementById('chatBox');
   const chatInput = document.getElementById('chatInput');
@@ -64,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatSocket = {
     // всё, что слушаем — прокидываем
     on:  (evt, cb)   => socket.on(evt, cb),
+    once:(evt, cb)   => socket.once(evt, cb),
     // emit — перехватываем только getChatHistory
     emit: (evt, data, ack) => {
       if (evt === 'getChatHistory') {
@@ -109,6 +164,29 @@ document.addEventListener('DOMContentLoaded', () => {
     lobbyId
   );
 
+  socket.on('tokenPlaced', (tok) => {
+    canvasAPI.addTokenWorld(tok.x, tok.y, tok.color || '#000', tok.radius || 20, tok.resourceId, tok.id);
+  });
+  socket.on('tokenMoved', (tok) => {
+    canvasAPI.updateTokenPosition(tok.id, tok.x, tok.y);
+  });
+  socket.on('tokenRemoved', ({ id }) => {
+    canvasAPI.removeToken(id);
+  });
+
+  socket.on('mapUploaded', (map) => {
+    canvasAPI.addMapWorld(map.url, map.id, map.x || 0, map.y || 0, map.scale || 1);
+    addMapToList(map);
+  });
+  socket.on('mapRemoved', ({ id }) => {
+    canvasAPI.removeMap(id);
+    removeMapFromList(id);
+  });
+  socket.on('mapUpdated', (m) => {
+    canvasAPI.updateMapTransform(m.id, m.x, m.y, m.scale);
+    updateMapListItem(m);
+  });
+
   // 8) Старт игры
   socket.on('gameStarted', ({ lobbyId: id }) => {
     if (id === lobbyId) {
@@ -116,4 +194,46 @@ document.addEventListener('DOMContentLoaded', () => {
       // тут можно переключить интерфейс в режим самой игры
     }
   });
+
+  function addMapToList(map) {
+    if (!mapList) return;
+    const div = document.createElement('div');
+    div.dataset.id = map.id;
+    div.textContent = map.name || 'map';
+    const scaleInput = document.createElement('input');
+    scaleInput.type = 'number';
+    scaleInput.step = '0.1';
+    scaleInput.min = '0.1';
+    scaleInput.value = map.scale || 1;
+    scaleInput.addEventListener('change', () => {
+      const val = parseFloat(scaleInput.value);
+      socket.emit('updateMap', { lobbyId, id: map.id, scale: val }, res => {
+        if (res?.error) console.error('updateMap', res.error);
+      });
+    });
+    div.appendChild(scaleInput);
+    if (isMaster) {
+      const rm = document.createElement('button');
+      rm.textContent = 'Удалить';
+      rm.addEventListener('click', () => {
+        socket.emit('removeMap', { lobbyId, id: map.id }, res => {
+          if (res?.error) console.error('removeMap', res.error);
+        });
+      });
+      div.appendChild(rm);
+    }
+    mapList.appendChild(div);
+  }
+
+  function removeMapFromList(id) {
+    if (!mapList) return;
+    const el = mapList.querySelector(`div[data-id="${id}"]`);
+    if (el) el.remove();
+  }
+
+  function updateMapListItem(map) {
+    if (!mapList) return;
+    const el = mapList.querySelector(`div[data-id="${map.id}"] input`);
+    if (el) el.value = map.scale;
+  }
 });

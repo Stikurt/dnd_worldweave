@@ -18,8 +18,13 @@ export default function gameHandler(io, socket, prisma) {
         prisma.map.findMany({ where: { lobbyId: id }, orderBy: { uploadedAt: 'asc' } }),
         prisma.token.findMany({ where: { lobbyId: id }, orderBy: { uploadedAt: 'asc' } })
       ]);
-      gameStates[id] ||= { tokens: [] };
-      cb({ maps, tokenResources, placedTokens: gameStates[id].tokens });
+      gameStates[id] ||= { tokens: [], maps: {} };
+      const mapStates = gameStates[id].maps;
+      const mapsWithState = maps.map(m => ({
+        ...m,
+        ...(mapStates[m.id] || { x: 0, y: 0, scale: 1 })
+      }));
+      cb({ maps: mapsWithState, tokenResources, placedTokens: gameStates[id].tokens });
     } catch (err) {
       console.error('getGameState error', err);
       cb({ error: 'Failed to load game state' });
@@ -30,6 +35,15 @@ export default function gameHandler(io, socket, prisma) {
     const id = parseInt(lobbyId, 10);
     if (isNaN(id)) return cb({ error: 'Invalid lobbyId' });
     try {
+      const lobby = await prisma.lobby.findUnique({ where: { id } });
+      if (!lobby) return cb({ error: 'Lobby not found' });
+      if (lobby.masterId !== userId) return cb({ error: 'Only master can upload' });
+
+      if (!process.env.AWS_REGION || !BUCKET) {
+        console.error('uploadMap error', 'S3 not configured');
+        return cb({ error: 'Storage not configured' });
+      }
+
       const key = `${id}/maps/${Date.now()}_${fileName}`;
       await s3.send(new PutObjectCommand({
         Bucket: BUCKET, Key: key,
@@ -37,8 +51,10 @@ export default function gameHandler(io, socket, prisma) {
       }));
       const url = `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
       const map = await prisma.map.create({ data: { lobbyId: id, name: fileName, url } });
-      io.to(room(id)).emit('mapUploaded', map);
-      cb({ success: true, map });
+      gameStates[id] ||= { tokens: [], maps: {} };
+      gameStates[id].maps[map.id] = { x: 0, y: 0, scale: 1 };
+      io.to(room(id)).emit('mapUploaded', { ...map, x: 0, y: 0, scale: 1 });
+      cb({ success: true, map: { ...map, x: 0, y: 0, scale: 1 } });
     } catch (err) {
       console.error('uploadMap error', err);
       cb({ error: 'Upload failed' });
@@ -49,9 +65,14 @@ export default function gameHandler(io, socket, prisma) {
     const lid = parseInt(lobbyId, 10);
     if (isNaN(lid)) return cb({ error: 'Invalid lobbyId' });
     try {
+      const lobby = await prisma.lobby.findUnique({ where: { id: lid } });
+      if (!lobby) return cb({ error: 'Lobby not found' });
+      if (lobby.masterId !== userId) return cb({ error: 'Only master can remove' });
+
       const map = await prisma.map.delete({ where: { id: mapId } });
       const key = map.url.split(`.${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/`)[1];
       await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+      gameStates[lid]?.maps && delete gameStates[lid].maps[mapId];
       io.to(room(lid)).emit('mapRemoved', { id: mapId });
       cb({ success: true });
     } catch (err) {
@@ -60,11 +81,30 @@ export default function gameHandler(io, socket, prisma) {
     }
   });
 
-  socket.on('placeToken', ({ lobbyId, resourceId, x, y }, cb) => {
+  socket.on('updateMap', async ({ lobbyId, id, x, y, scale }, cb) => {
+    const lid = parseInt(lobbyId, 10);
+    if (isNaN(lid)) return cb({ error: 'Invalid lobbyId' });
+    const lobby = await prisma.lobby.findUnique({ where: { id: lid } });
+    if (!lobby) return cb({ error: 'Lobby not found' });
+    if (lobby.masterId !== userId) return cb({ error: 'Only master can update' });
+
+    const state = gameStates[lid];
+    const mapState = state?.maps?.[id];
+    if (!mapState) return cb({ error: 'Map not found' });
+    Object.assign(mapState, {
+      x: typeof x === 'number' ? x : mapState.x,
+      y: typeof y === 'number' ? y : mapState.y,
+      scale: typeof scale === 'number' ? scale : mapState.scale
+    });
+    io.to(room(lid)).emit('mapUpdated', { id, x: mapState.x, y: mapState.y, scale: mapState.scale });
+    cb({ success: true });
+  });
+
+  socket.on('placeToken', ({ lobbyId, resourceId, x, y, radius, color }, cb) => {
     const id = parseInt(lobbyId, 10);
     if (isNaN(id)) return cb({ error: 'Invalid lobbyId' });
-    gameStates[id] ||= { tokens: [] };
-    const placement = { id: uuidv4(), resourceId, x, y, placedBy: userId };
+    gameStates[id] ||= { tokens: [], maps: {} };
+    const placement = { id: uuidv4(), resourceId, x, y, radius, color, placedBy: userId };
     gameStates[id].tokens.push(placement);
     io.to(room(id)).emit('tokenPlaced', placement);
     cb({ success: true, placement });
