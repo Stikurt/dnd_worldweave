@@ -3,13 +3,19 @@ import { addToken as addCanvasToken } from "./canvas.js";
 let selectedImage = null;
 let isAddingToken = false;
 let galleryElement = null;
+let ws = null;
+let lobby = null;
 
 export function initTokenManager({
   gallery,
   categorySelect,
   sizeSelect,
+  socket,
+  lobbyId,
 }) {
   galleryElement = gallery;
+  ws = socket;
+  lobby = lobbyId;
 
   categorySelect.addEventListener("change", () => {
     loadTokenImages(categorySelect.value);
@@ -36,7 +42,18 @@ export function initTokenManager({
     createTokenAt: (x, y) => {
       const defaultColor = "#000"; // Используем чёрный по умолчанию вместо отсутствующего селектора цвета
       const radius = parseInt(sizeSelect.value, 10);
-      addCanvasToken(x, y, defaultColor, radius, selectedImage);
+      const token = addCanvasToken(x, y, defaultColor, radius, selectedImage);
+      if (ws) {
+        ws.emit(
+          "placeToken",
+          { lobbyId: lobby, resourceId: selectedImage?.title || "local", x: token.x, y: token.y },
+          (res) => {
+            if (!res?.error) {
+              token.id = res.placement.id;
+            }
+          }
+        );
+      }
     },
   };
 }

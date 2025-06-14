@@ -7,9 +7,14 @@ let selectedToken = null;
 let movingToken = null;
 let tokens = [];
 
-export function initCanvas(canvasElement) {
+// util callbacks for server sync
+let onMoveCb = null;
+
+export function initCanvas(canvasElement, opts = {}) {
   canvas = canvasElement;
   ctx = canvas.getContext("2d");
+
+  onMoveCb = opts.onMove || null;
 
   window.addEventListener("resize", resizeCanvas);
   canvas.addEventListener("wheel", handleZoom);
@@ -28,11 +33,21 @@ export function initCanvas(canvasElement) {
     setTokens,
     getSelectedToken,
     setSelectedToken,
+    addServerToken,
+    updateServerToken,
+    removeServerToken,
   };
 }
 
 export function setTokens(newTokens) {
-  tokens = newTokens;
+  tokens = newTokens.map((t) => ({
+    id: t.id,
+    x: t.x,
+    y: t.y,
+    color: '#000',
+    radius: 20,
+    image: null,
+  }));
   draw();
 }
 
@@ -59,11 +74,38 @@ export function clearBoard() {
 }
 
 // Принимает экранные координаты, конвертирует в координаты сетки
-export function addToken(screenX, screenY, color, radius, image = null) {
+export function addToken(screenX, screenY, color, radius, image = null, id = null) {
   const x = (screenX - offsetX) / scale;
   const y = (screenY - offsetY) / scale;
-  const token = { x, y, color, radius, image };
+  const token = { id, x, y, color, radius, image };
   tokens.push(token);
+  draw();
+  return token;
+}
+
+export function addServerToken(token) {
+  tokens.push({
+    id: token.id,
+    x: token.x,
+    y: token.y,
+    color: '#000',
+    radius: 20,
+    image: null,
+  });
+  draw();
+}
+
+export function updateServerToken({ id, x, y }) {
+  const tok = tokens.find((t) => t.id === id);
+  if (tok) {
+    tok.x = x;
+    tok.y = y;
+    draw();
+  }
+}
+
+export function removeServerToken(id) {
+  tokens = tokens.filter((t) => t.id !== id);
   draw();
 }
 
@@ -132,6 +174,9 @@ function handleMouseMove(event) {
 
 function handleMouseUp() {
   isDragging = false;
+  if (movingToken && onMoveCb) {
+    onMoveCb({ id: movingToken.id, x: movingToken.x, y: movingToken.y });
+  }
   movingToken = null;
 }
 

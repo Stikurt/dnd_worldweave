@@ -23,7 +23,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1.1) Заходим в комнату
   socket.once('connect', () => {
     socket.emit('joinLobby', { lobbyId }, res => {
-      if (res?.error) console.error('joinLobby:', res.error);
+      if (res?.error) {
+        console.error('joinLobby:', res.error);
+      } else {
+        socket.emit('getGameState', { lobbyId }, (state) => {
+          if (!state?.error) {
+            canvasAPI.setTokens(state.placedTokens);
+          }
+        });
+      }
     });
   });
 
@@ -33,7 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Не найден <canvas id="gameBoard">');
     return;
   }
-  const canvasAPI = initCanvas(canvasEl);
+  const canvasAPI = initCanvas(canvasEl, {
+    onMove: ({ id, x, y }) => {
+      if (id) {
+        socket.emit('moveToken', { lobbyId, id, x, y }, () => {});
+      }
+    }
+  });
 
   // 3) Token Manager + UI Controls
   const tokenManager = initTokenManager({
@@ -108,6 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
     socket,
     lobbyId
   );
+
+  socket.on('tokenPlaced', tok => canvasAPI.addServerToken(tok));
+  socket.on('tokenMoved', tok => canvasAPI.updateServerToken(tok));
+  socket.on('tokenRemoved', ({ id }) => canvasAPI.removeServerToken(id));
 
   // 8) Старт игры
   socket.on('gameStarted', ({ lobbyId: id }) => {
