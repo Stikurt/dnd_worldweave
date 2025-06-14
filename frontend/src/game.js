@@ -47,6 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
   canvasAPI.onTokenMove(tok => {
     socket.emit('moveToken', { lobbyId, id: tok.id, x: tok.x, y: tok.y }, () => {});
   });
+  canvasAPI.onStrokeEnd(stroke => {
+    socket.emit('drawStroke', { lobbyId, color: stroke.color, width: stroke.width, points: stroke.points }, res => {
+      if (res?.error) console.error('drawStroke', res.error);
+    });
+  });
 
   // 3) Token Manager + UI Controls
   const tokenManager = initTokenManager({
@@ -67,7 +72,13 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas:             canvasEl,
     canvasAPI,
     socket,
-    lobbyId
+    lobbyId,
+    brushTool:        document.getElementById('brushTool'),
+    eraserTool:       document.getElementById('eraserTool'),
+    drawColorInput:   document.getElementById('drawColor'),
+    brushSizeInput:   document.getElementById('brushSize'),
+    undoDrawBtn:      document.getElementById('undoDraw'),
+    redoDrawBtn:      document.getElementById('redoDraw')
   });
 
   const mapFile   = document.getElementById('mapFile');
@@ -104,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       state.placedTokens.forEach(p => {
         canvasAPI.addTokenWorld(p.x, p.y, p.color || '#000', p.radius || 20, p.resourceId, p.id);
+      });
+      state.strokes?.forEach(s => {
+        canvasAPI.addStrokeWorld(s);
       });
     } else if (state?.error) {
       console.error('getGameState', state.error);
@@ -172,6 +186,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   socket.on('tokenRemoved', ({ id }) => {
     canvasAPI.removeToken(id);
+  });
+
+  socket.on('strokeDrawn', (stroke) => {
+    canvasAPI.addStrokeWorld(stroke);
+  });
+  socket.on('strokeRemoved', ({ id }) => {
+    canvasAPI.removeStroke(id);
   });
 
   socket.on('mapUploaded', (map) => {

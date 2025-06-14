@@ -12,6 +12,19 @@ let tokens = [];
 let maps = [];
 let moveCb = null;
 
+function setDrawingMode(val) { drawing = val; }
+function setBrushColor(c) { drawColor = c; }
+function setBrushSize(s) { brushSize = s; }
+function setEraser(val) { eraser = val; }
+function onStrokeEnd(cb) { strokeEndCb = cb; }
+let drawing = false;
+let currentStroke = null;
+let strokes = [];
+let strokeEndCb = null;
+let drawColor = '#ff0000';
+let brushSize = 4;
+let eraser = false;
+
 export function initCanvas(canvasElement) {
   canvas = canvasElement;
   ctx = canvas.getContext("2d");
@@ -42,6 +55,13 @@ export function initCanvas(canvasElement) {
     addMapWorld,
     removeMap,
     updateMapTransform,
+    setDrawingMode,
+    setBrushColor,
+    setBrushSize,
+    setEraser,
+    onStrokeEnd,
+    addStrokeWorld,
+    removeStroke,
   };
 }
 
@@ -148,6 +168,16 @@ export function getMaps() {
   return maps;
 }
 
+export function addStrokeWorld(stroke) {
+  strokes.push(stroke);
+  draw();
+}
+
+export function removeStroke(id) {
+  strokes = strokes.filter(s => s.id !== id);
+  draw();
+}
+
 // === Internal helpers ===
 
 function resizeCanvas() {
@@ -178,7 +208,15 @@ function handleMouseDown(event) {
     startY = event.clientY;
     return;
   }
+
   const { x, y } = getMousePos(event);
+
+  if (drawing) {
+    currentStroke = { color: eraser ? '#ffffff' : drawColor, width: brushSize, points: [{ x, y }] };
+    draw();
+    return;
+  }
+
   selectedToken = null;
   movingToken = null;
 
@@ -206,6 +244,13 @@ function handleMouseMove(event) {
     return;
   }
 
+  if (currentStroke) {
+    const { x, y } = getMousePos(event);
+    currentStroke.points.push({ x, y });
+    draw();
+    return;
+  }
+
   if (!movingToken) return;
   const { x, y } = getMousePos(event);
   movingToken.x = x - movingToken.dragOffsetX;
@@ -215,6 +260,13 @@ function handleMouseMove(event) {
 
 function handleMouseUp() {
   isDragging = false;
+  if (currentStroke) {
+    const finished = currentStroke;
+    currentStroke = null;
+    strokeEndCb && strokeEndCb(finished);
+    draw();
+    return;
+  }
   if (movingToken) {
     moveCb && moveCb(movingToken);
   }
@@ -233,6 +285,7 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawMaps();
   drawGrid();
+  drawStrokes();
   drawTokens();
 }
 
@@ -258,6 +311,36 @@ function drawGrid() {
     ctx.stroke();
   }
 
+  ctx.restore();
+}
+
+function drawStrokes() {
+  ctx.save();
+  ctx.translate(offsetX, offsetY);
+  ctx.scale(scale, scale);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  strokes.forEach((s) => {
+    if (!s.points.length) return;
+    ctx.beginPath();
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = s.width;
+    ctx.moveTo(s.points[0].x, s.points[0].y);
+    for (let i = 1; i < s.points.length; i++) {
+      ctx.lineTo(s.points[i].x, s.points[i].y);
+    }
+    ctx.stroke();
+  });
+  if (currentStroke) {
+    ctx.beginPath();
+    ctx.strokeStyle = currentStroke.color;
+    ctx.lineWidth = currentStroke.width;
+    ctx.moveTo(currentStroke.points[0].x, currentStroke.points[0].y);
+    for (let i = 1; i < currentStroke.points.length; i++) {
+      ctx.lineTo(currentStroke.points[i].x, currentStroke.points[i].y);
+    }
+    ctx.stroke();
+  }
   ctx.restore();
 }
 

@@ -9,6 +9,12 @@ export function initUIControls({
   canvasAPI,
   socket,
   lobbyId,
+  brushTool,
+  eraserTool,
+  drawColorInput,
+  brushSizeInput,
+  undoDrawBtn,
+  redoDrawBtn,
 }) {
   console.log("initUIControls initialized", { deleteTokenBtn, clearBoardBtn, canvasAPI, tokenManager });
 
@@ -35,6 +41,32 @@ export function initUIControls({
       socket.emit("removeToken", { lobbyId, id: t.id }, () => {});
     });
     canvasAPI.clearBoard();
+  });
+
+  brushTool.addEventListener('click', () => {
+    canvasAPI.setDrawingMode(true);
+    canvasAPI.setEraser(false);
+  });
+
+  eraserTool.addEventListener('click', () => {
+    canvasAPI.setDrawingMode(true);
+    canvasAPI.setEraser(true);
+  });
+
+  drawColorInput.addEventListener('change', () => {
+    canvasAPI.setBrushColor(drawColorInput.value);
+  });
+
+  brushSizeInput.addEventListener('change', () => {
+    canvasAPI.setBrushSize(parseInt(brushSizeInput.value, 10) || 1);
+  });
+
+  undoDrawBtn.addEventListener('click', () => {
+    socket.emit('undoStroke', { lobbyId }, () => {});
+  });
+
+  redoDrawBtn.addEventListener('click', () => {
+    socket.emit('redoStroke', { lobbyId }, () => {});
   });
 
   // Смена размера токена

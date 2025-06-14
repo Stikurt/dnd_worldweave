@@ -18,13 +18,13 @@ export default function gameHandler(io, socket, prisma) {
         prisma.map.findMany({ where: { lobbyId: id }, orderBy: { uploadedAt: 'asc' } }),
         prisma.token.findMany({ where: { lobbyId: id }, orderBy: { uploadedAt: 'asc' } })
       ]);
-      gameStates[id] ||= { tokens: [], maps: {} };
+      gameStates[id] ||= { tokens: [], maps: {}, strokes: [], undo: {} };
       const mapStates = gameStates[id].maps;
       const mapsWithState = maps.map(m => ({
         ...m,
         ...(mapStates[m.id] || { x: 0, y: 0, scale: 1 })
       }));
-      cb({ maps: mapsWithState, tokenResources, placedTokens: gameStates[id].tokens });
+      cb({ maps: mapsWithState, tokenResources, placedTokens: gameStates[id].tokens, strokes: gameStates[id].strokes });
     } catch (err) {
       console.error('getGameState error', err);
       cb({ error: 'Failed to load game state' });
@@ -51,7 +51,7 @@ export default function gameHandler(io, socket, prisma) {
       }));
       const url = `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
       const map = await prisma.map.create({ data: { lobbyId: id, name: fileName, url } });
-      gameStates[id] ||= { tokens: [], maps: {} };
+      gameStates[id] ||= { tokens: [], maps: {}, strokes: [], undo: {} };
       gameStates[id].maps[map.id] = { x: 0, y: 0, scale: 1 };
       io.to(room(id)).emit('mapUploaded', { ...map, x: 0, y: 0, scale: 1 });
       cb({ success: true, map: { ...map, x: 0, y: 0, scale: 1 } });
@@ -103,7 +103,7 @@ export default function gameHandler(io, socket, prisma) {
   socket.on('placeToken', ({ lobbyId, resourceId, x, y, radius, color }, cb) => {
     const id = parseInt(lobbyId, 10);
     if (isNaN(id)) return cb({ error: 'Invalid lobbyId' });
-    gameStates[id] ||= { tokens: [], maps: {} };
+    gameStates[id] ||= { tokens: [], maps: {}, strokes: [], undo: {} };
     const placement = { id: uuidv4(), resourceId, x, y, radius, color, placedBy: userId };
     gameStates[id].tokens.push(placement);
     io.to(room(id)).emit('tokenPlaced', placement);
@@ -129,6 +129,43 @@ export default function gameHandler(io, socket, prisma) {
     state.tokens = state.tokens.filter(t => t.id !== id);
     io.to(room(lid)).emit('tokenRemoved', { id });
     cb({ success: true });
+  });
+
+  socket.on('drawStroke', ({ lobbyId, color, width, points }, cb) => {
+    const lid = parseInt(lobbyId, 10);
+    if (isNaN(lid)) return cb({ error: 'Invalid lobbyId' });
+    gameStates[lid] ||= { tokens: [], maps: {}, strokes: [], undo: {} };
+    const stroke = { id: uuidv4(), userId, color, width, points };
+    gameStates[lid].strokes.push(stroke);
+    io.to(room(lid)).emit('strokeDrawn', stroke);
+    cb({ success: true, stroke });
+  });
+
+  socket.on('undoStroke', ({ lobbyId }, cb) => {
+    const lid = parseInt(lobbyId, 10);
+    if (isNaN(lid)) return cb({ error: 'Invalid lobbyId' });
+    const state = gameStates[lid];
+    if (!state) return cb({ error: 'Lobby not found' });
+    const idx = [...state.strokes].map(s => s.userId).lastIndexOf(userId);
+    if (idx === -1) return cb({ error: 'Nothing to undo' });
+    const [stroke] = state.strokes.splice(idx, 1);
+    state.undo[userId] ||= [];
+    state.undo[userId].push(stroke);
+    io.to(room(lid)).emit('strokeRemoved', { id: stroke.id });
+    cb({ success: true });
+  });
+
+  socket.on('redoStroke', ({ lobbyId }, cb) => {
+    const lid = parseInt(lobbyId, 10);
+    if (isNaN(lid)) return cb({ error: 'Invalid lobbyId' });
+    const state = gameStates[lid];
+    if (!state) return cb({ error: 'Lobby not found' });
+    const stack = state.undo[userId];
+    if (!stack || !stack.length) return cb({ error: 'Nothing to redo' });
+    const stroke = stack.pop();
+    state.strokes.push(stroke);
+    io.to(room(lid)).emit('strokeDrawn', stroke);
+    cb({ success: true, stroke });
   });
 
   socket.on('endGame', ({ lobbyId }, cb) => {
