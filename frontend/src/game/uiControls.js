@@ -14,7 +14,11 @@ export function initUIControls({
   deleteTokenBtn.addEventListener("click", () => {
     console.log("Delete button clicked");
     if (canvasAPI && typeof canvasAPI.removeSelectedToken === "function") {
-      canvasAPI.removeSelectedToken();
+      const tok = canvasAPI.getSelectedToken();
+      if (tok) {
+        canvasAPI.removeSelectedToken();
+        socket.emit('removeToken', { lobbyId, id: tok.id }, () => {});
+      }
     } else {
       console.error("canvasAPI.removeSelectedToken is not a function");
     }
