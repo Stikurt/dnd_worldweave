@@ -62,9 +62,14 @@ export default function lobbyHandler(io, socket, prisma) {
       const lobby = await prisma.lobby.findUnique({ where: { id } });
       if (!lobby) return cb({ error: 'Lobby not found' });
 
-      await prisma.lobbyPlayer.create({
-        data: { lobbyId: id, userId: getUserId() },
-      });
+      try {
+        await prisma.lobbyPlayer.create({
+          data: { lobbyId: id, userId: getUserId() },
+        });
+      } catch (err) {
+        // Игнорируем ошибку уникальности, если игрок уже в лобби
+        if (err.code !== 'P2002') throw err;
+      }
 
       socket.join(roomName(id));
       cb({ lobbyId: id, name: lobby.name, masterId: lobby.masterId });
