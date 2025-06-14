@@ -19,7 +19,7 @@ export default defineConfig({
       },
       // Проксируем socket.io и WS на тот же бэкенд
       '/socket.io': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3000',  
         ws: true,
         changeOrigin: true,
         secure: false
