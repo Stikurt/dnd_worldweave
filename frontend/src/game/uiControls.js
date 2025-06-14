@@ -9,6 +9,7 @@ export function initUIControls({
   canvasAPI,
   socket,
   lobbyId,
+  pointerTool,
   brushTool,
   eraserTool,
   drawColorInput,
@@ -41,6 +42,11 @@ export function initUIControls({
       socket.emit("removeToken", { lobbyId, id: t.id }, () => {});
     });
     canvasAPI.clearBoard();
+  });
+
+  pointerTool.addEventListener('click', () => {
+    canvasAPI.setDrawingMode(false);
+    canvasAPI.setEraser(false);
   });
 
   brushTool.addEventListener('click', () => {

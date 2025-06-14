@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     canvasAPI,
     socket,
     lobbyId,
+    pointerTool:     document.getElementById('pointerTool'),
     brushTool:        document.getElementById('brushTool'),
     eraserTool:       document.getElementById('eraserTool'),
     drawColorInput:   document.getElementById('drawColor'),
