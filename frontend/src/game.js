@@ -45,7 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
     categorySelect: document.getElementById('tokenCategory'),
     sizeSelect:     document.getElementById('tokenSize'),
     socket,
-    lobbyId
+    lobbyId,
+    canvasAPI
   });
   initUIControls({
     deleteTokenBtn:     document.getElementById('deleteToken'),
