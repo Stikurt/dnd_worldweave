@@ -1,11 +1,15 @@
 let canvas, ctx;
 let baseCellSize = 30;
 let scale = 1;
-let offsetX = 0, offsetY = 0;
-let isDragging = false, startX, startY;
+let offsetX = 0,
+  offsetY = 0;
+let isDragging = false,
+  startX,
+  startY;
 let selectedToken = null;
 let movingToken = null;
 let tokens = [];
+let moveCb = null;
 
 export function initCanvas(canvasElement) {
   canvas = canvasElement;
@@ -23,11 +27,17 @@ export function initCanvas(canvasElement) {
   // Возвращаем API для UI-контролов
   return {
     addToken,
+    addTokenWorld,
+    removeToken,
     removeSelectedToken,
     clearBoard,
     setTokens,
     getSelectedToken,
+    getTokens,
     setSelectedToken,
+    updateTokenPosition,
+    screenToWorld,
+    onTokenMove,
   };
 }
 
@@ -47,9 +57,7 @@ export function setSelectedToken(token) {
 
 export function removeSelectedToken() {
   if (!selectedToken) return;
-  tokens = tokens.filter((t) => t !== selectedToken);
-  selectedToken = null;
-  draw();
+  removeToken(selectedToken.id);
 }
 
 export function clearBoard() {
@@ -58,14 +66,56 @@ export function clearBoard() {
   draw();
 }
 
-// Принимает экранные координаты, конвертирует в координаты сетки
-export function addToken(screenX, screenY, color, radius, image = null) {
-  const x = (screenX - offsetX) / scale;
-  const y = (screenY - offsetY) / scale;
-  const token = { x, y, color, radius, image };
+export function screenToWorld(screenX, screenY) {
+  return {
+    x: (screenX - offsetX) / scale,
+    y: (screenY - offsetY) / scale,
+  };
+}
+
+export function addTokenWorld(x, y, color, radius, imageSrc = null, id) {
+  const token = { id, x, y, color, radius, image: null };
+  if (imageSrc) {
+    const img = new Image();
+    img.src = imageSrc;
+    token.image = img;
+    img.onload = draw;
+  }
   tokens.push(token);
   draw();
+  return token;
 }
+
+export function addToken(screenX, screenY, color, radius, imageEl = null, id) {
+  const { x, y } = screenToWorld(screenX, screenY);
+  const src = imageEl?.src;
+  return addTokenWorld(x, y, color, radius, src, id);
+}
+
+export function updateTokenPosition(id, x, y) {
+  const tok = tokens.find((t) => t.id === id);
+  if (tok) {
+    tok.x = x;
+    tok.y = y;
+    draw();
+  }
+}
+
+export function removeToken(id) {
+  tokens = tokens.filter((t) => t.id !== id);
+  if (selectedToken && selectedToken.id === id) selectedToken = null;
+  draw();
+}
+
+export function getTokens() {
+  return tokens;
+}
+
+export function onTokenMove(cb) {
+  moveCb = cb;
+}
+
+// === Internal helpers ===
 
 function resizeCanvas() {
   canvas.width = window.innerWidth * 0.7;
@@ -132,6 +182,9 @@ function handleMouseMove(event) {
 
 function handleMouseUp() {
   isDragging = false;
+  if (movingToken) {
+    moveCb && moveCb(movingToken);
+  }
   movingToken = null;
 }
 

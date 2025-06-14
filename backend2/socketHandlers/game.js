@@ -60,11 +60,11 @@ export default function gameHandler(io, socket, prisma) {
     }
   });
 
-  socket.on('placeToken', ({ lobbyId, resourceId, x, y }, cb) => {
+  socket.on('placeToken', ({ lobbyId, resourceId, x, y, radius, color }, cb) => {
     const id = parseInt(lobbyId, 10);
     if (isNaN(id)) return cb({ error: 'Invalid lobbyId' });
     gameStates[id] ||= { tokens: [] };
-    const placement = { id: uuidv4(), resourceId, x, y, placedBy: userId };
+    const placement = { id: uuidv4(), resourceId, x, y, radius, color, placedBy: userId };
     gameStates[id].tokens.push(placement);
     io.to(room(id)).emit('tokenPlaced', placement);
     cb({ success: true, placement });

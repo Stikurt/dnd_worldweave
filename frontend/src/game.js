@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   const canvasAPI = initCanvas(canvasEl);
+  canvasAPI.onTokenMove(tok => {
+    socket.emit('moveToken', { lobbyId, id: tok.id, x: tok.x, y: tok.y }, () => {});
+  });
 
   // 3) Token Manager + UI Controls
   const tokenManager = initTokenManager({
@@ -55,6 +58,16 @@ document.addEventListener('DOMContentLoaded', () => {
     canvasAPI,
     socket,
     lobbyId
+  });
+
+  socket.emit('getGameState', { lobbyId }, state => {
+    if (state && !state.error) {
+      state.placedTokens.forEach(p => {
+        canvasAPI.addTokenWorld(p.x, p.y, p.color || '#000', p.radius || 20, p.resourceId, p.id);
+      });
+    } else if (state?.error) {
+      console.error('getGameState', state.error);
+    }
   });
 
   // 4) ВАЖНО: оборачиваем socket только для chat.js
@@ -110,6 +123,16 @@ document.addEventListener('DOMContentLoaded', () => {
     socket,
     lobbyId
   );
+
+  socket.on('tokenPlaced', (tok) => {
+    canvasAPI.addTokenWorld(tok.x, tok.y, tok.color || '#000', tok.radius || 20, tok.resourceId, tok.id);
+  });
+  socket.on('tokenMoved', (tok) => {
+    canvasAPI.updateTokenPosition(tok.id, tok.x, tok.y);
+  });
+  socket.on('tokenRemoved', ({ id }) => {
+    canvasAPI.removeToken(id);
+  });
 
   // 8) Старт игры
   socket.on('gameStarted', ({ lobbyId: id }) => {

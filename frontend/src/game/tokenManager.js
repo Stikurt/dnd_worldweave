@@ -1,4 +1,4 @@
-import { addToken as addCanvasToken } from "./canvas.js";
+
 
 let selectedImage = null;
 let isAddingToken = false;
@@ -8,6 +8,9 @@ export function initTokenManager({
   gallery,
   categorySelect,
   sizeSelect,
+  socket,
+  lobbyId,
+  canvasAPI,
 }) {
   galleryElement = gallery;
 
@@ -28,6 +31,8 @@ export function initTokenManager({
 
   return {
     isAddingToken: () => isAddingToken,
+    startAddingToken: () => { isAddingToken = true; },
+    setImage: src => { selectedImage = new Image(); selectedImage.src = src; },
     finalizeToken: () => {
       selectedImage = null;
       isAddingToken = false;
@@ -36,7 +41,18 @@ export function initTokenManager({
     createTokenAt: (x, y) => {
       const defaultColor = "#000"; // Используем чёрный по умолчанию вместо отсутствующего селектора цвета
       const radius = parseInt(sizeSelect.value, 10);
-      addCanvasToken(x, y, defaultColor, radius, selectedImage);
+      const { x: boardX, y: boardY } = canvasAPI.screenToWorld(x, y);
+      socket.emit(
+        "placeToken",
+        { lobbyId, resourceId: selectedImage?.src, x: boardX, y: boardY, radius, color: defaultColor },
+        (res) => {
+          if (!res || res.error) {
+            console.error("placeToken", res?.error);
+            return;
+          }
+          canvasAPI.addTokenWorld(boardX, boardY, defaultColor, radius, selectedImage?.src, res.placement.id);
+        }
+      );
     },
   };
 }
