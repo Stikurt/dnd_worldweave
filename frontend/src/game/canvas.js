@@ -9,6 +9,7 @@ let isDragging = false,
 let selectedToken = null;
 let movingToken = null;
 let tokens = [];
+let maps = [];
 let moveCb = null;
 
 export function initCanvas(canvasElement) {
@@ -38,6 +39,9 @@ export function initCanvas(canvasElement) {
     updateTokenPosition,
     screenToWorld,
     onTokenMove,
+    addMapWorld,
+    removeMap,
+    updateMapTransform,
   };
 }
 
@@ -113,6 +117,35 @@ export function getTokens() {
 
 export function onTokenMove(cb) {
   moveCb = cb;
+}
+
+// === Map helpers ===
+export function addMapWorld(url, id, x = 0, y = 0, mapScale = 1) {
+  const img = new Image();
+  const map = { id, x, y, scale: mapScale, image: img };
+  img.src = url;
+  img.onload = draw;
+  maps.push(map);
+  draw();
+  return map;
+}
+
+export function updateMapTransform(id, x, y, mapScale) {
+  const m = maps.find((mm) => mm.id === id);
+  if (!m) return;
+  if (typeof x === 'number') m.x = x;
+  if (typeof y === 'number') m.y = y;
+  if (typeof mapScale === 'number') m.scale = mapScale;
+  draw();
+}
+
+export function removeMap(id) {
+  maps = maps.filter((m) => m.id !== id);
+  draw();
+}
+
+export function getMaps() {
+  return maps;
 }
 
 // === Internal helpers ===
@@ -198,6 +231,7 @@ function getMousePos(event) {
 function draw() {
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawMaps();
   drawGrid();
   drawTokens();
 }
@@ -266,5 +300,17 @@ function drawTokens() {
     ctx.restore();
   });
 
+  ctx.restore();
+}
+
+function drawMaps() {
+  ctx.save();
+  ctx.translate(offsetX, offsetY);
+  ctx.scale(scale, scale);
+  maps.forEach((m) => {
+    if (m.image.complete) {
+      ctx.drawImage(m.image, m.x, m.y, m.image.width * m.scale, m.image.height * m.scale);
+    }
+  });
   ctx.restore();
 }

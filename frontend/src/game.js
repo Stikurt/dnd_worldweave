@@ -20,11 +20,20 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Неверный lobbyId');
     return;
   }
+  let isMaster = false;
 
   // 1.1) Заходим в комнату
   socket.once('connect', () => {
     socket.emit('joinLobby', { lobbyId }, res => {
       if (res?.error) console.error('joinLobby:', res.error);
+      else {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        isMaster = payload.userId === res.masterId;
+        if (!isMaster) {
+          const c = document.getElementById('mapControls');
+          if (c) c.style.display = 'none';
+        }
+      }
     });
   });
 
@@ -61,8 +70,32 @@ document.addEventListener('DOMContentLoaded', () => {
     lobbyId
   });
 
+  const mapFile   = document.getElementById('mapFile');
+  const uploadMap = document.getElementById('uploadMap');
+  const mapList   = document.getElementById('mapList');
+
+  if (uploadMap) {
+    uploadMap.addEventListener('click', () => {
+      if (!isMaster) return;
+      const file = mapFile.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const arr = Array.from(new Uint8Array(e.target.result));
+        socket.emit('uploadMap', { lobbyId, fileName: file.name, mimeType: file.type, fileBuffer: arr }, res => {
+          if (res?.error) console.error('uploadMap', res.error);
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
   socket.emit('getGameState', { lobbyId }, state => {
     if (state && !state.error) {
+      state.maps?.forEach(m => {
+        canvasAPI.addMapWorld(m.url, m.id, m.x || 0, m.y || 0, m.scale || 1);
+        addMapToList(m);
+      });
       state.placedTokens.forEach(p => {
         canvasAPI.addTokenWorld(p.x, p.y, p.color || '#000', p.radius || 20, p.resourceId, p.id);
       });
@@ -135,6 +168,19 @@ document.addEventListener('DOMContentLoaded', () => {
     canvasAPI.removeToken(id);
   });
 
+  socket.on('mapUploaded', (map) => {
+    canvasAPI.addMapWorld(map.url, map.id, map.x || 0, map.y || 0, map.scale || 1);
+    addMapToList(map);
+  });
+  socket.on('mapRemoved', ({ id }) => {
+    canvasAPI.removeMap(id);
+    removeMapFromList(id);
+  });
+  socket.on('mapUpdated', (m) => {
+    canvasAPI.updateMapTransform(m.id, m.x, m.y, m.scale);
+    updateMapListItem(m);
+  });
+
   // 8) Старт игры
   socket.on('gameStarted', ({ lobbyId: id }) => {
     if (id === lobbyId) {
@@ -142,4 +188,46 @@ document.addEventListener('DOMContentLoaded', () => {
       // тут можно переключить интерфейс в режим самой игры
     }
   });
+
+  function addMapToList(map) {
+    if (!mapList) return;
+    const div = document.createElement('div');
+    div.dataset.id = map.id;
+    div.textContent = map.name || 'map';
+    const scaleInput = document.createElement('input');
+    scaleInput.type = 'number';
+    scaleInput.step = '0.1';
+    scaleInput.min = '0.1';
+    scaleInput.value = map.scale || 1;
+    scaleInput.addEventListener('change', () => {
+      const val = parseFloat(scaleInput.value);
+      socket.emit('updateMap', { lobbyId, id: map.id, scale: val }, res => {
+        if (res?.error) console.error('updateMap', res.error);
+      });
+    });
+    div.appendChild(scaleInput);
+    if (isMaster) {
+      const rm = document.createElement('button');
+      rm.textContent = 'Удалить';
+      rm.addEventListener('click', () => {
+        socket.emit('removeMap', { lobbyId, id: map.id }, res => {
+          if (res?.error) console.error('removeMap', res.error);
+        });
+      });
+      div.appendChild(rm);
+    }
+    mapList.appendChild(div);
+  }
+
+  function removeMapFromList(id) {
+    if (!mapList) return;
+    const el = mapList.querySelector(`div[data-id="${id}"]`);
+    if (el) el.remove();
+  }
+
+  function updateMapListItem(map) {
+    if (!mapList) return;
+    const el = mapList.querySelector(`div[data-id="${map.id}"] input`);
+    if (el) el.value = map.scale;
+  }
 });
