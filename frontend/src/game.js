@@ -11,7 +11,8 @@ import { initDice }         from './dice.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // 1) Авторизация + Socket.IO
-  const token   = ensureAuth();
+  ensureAuth();
+  const token   = localStorage.getItem('jwt');
   const socket  = io({ auth: { token }, path: '/socket.io' });
   const params  = new URLSearchParams(window.location.search);
   const lobbyId = Number(params.get('lobbyId'));
@@ -64,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatSocket = {
     // всё, что слушаем — прокидываем
     on:  (evt, cb)   => socket.on(evt, cb),
+    once:(evt, cb)   => socket.once(evt, cb),
     // emit — перехватываем только getChatHistory
     emit: (evt, data, ack) => {
       if (evt === 'getChatHistory') {
