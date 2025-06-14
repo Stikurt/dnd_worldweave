@@ -1,0 +1,100 @@
+:root {
+  /* Основные переменные */
+  --primary: #4a90e2;
+  --primary-dark: #357abd;
+  --bg-light: #f4f7fa;
+  --card-bg: #fff;
+  --text-main: #374151;
+  --radius: 0.25rem;
+  --transition: 0.2s ease;
+}
+
+/* Контейнер истории сообщений */
+#chat {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;                 /* без внешних отступов между сообщениями */
+  height: 300px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Сообщение в чате */
+.chat-message {
+  display: block;
+  margin: 0.1rem 0;       /* минимальные вертикальные отступы */
+  padding: 0.15rem 0.3rem;/* компактный внутренний отступ */
+  border-radius: var(--radius);
+  max-width: 70%;
+  word-break: break-word;
+  font-size: 0.875rem;
+  transition: background var(--transition);
+}
+
+/* Имя отправителя над сообщением */
+.chat-message::before {
+  content: attr(data-sender);
+  display: block;
+  margin-bottom: 0.1rem;
+  font-size: 0.65rem;
+  color: #6b7280;
+}
+
+/* Свои сообщения (правый край) */
+.chat-message.user {
+  align-self: flex-end;
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Чужие сообщения (левый край) */
+.chat-message.other {
+  align-self: flex-start;
+  background: #f1f5f9;
+  color: var(--text-main);
+}
+
+/* Область ввода и кнопки */
+.chat-input-area {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+/* Поле ввода текста */
+.chat-input-area .input {
+  flex: 1;
+  padding: 0.25rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.chat-input-area .input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(74,144,226,0.15);
+}
+
+/* Кнопки отправки и голосового чата */
+.chat-input-area .button,
+.chat-input-area .voice-btn {
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.chat-input-area .button:hover,
+.chat-input-area .voice-btn:hover {
+  background: var(--primary-dark);
+}

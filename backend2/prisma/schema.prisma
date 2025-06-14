@@ -1,0 +1,86 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  createdAt     DateTime      @default(now())
+  expiresAt     DateTime?
+  displayName   String
+
+  masterOf      Lobby[]       @relation("LobbyMaster")
+  lobbyPlayers  LobbyPlayer[]
+  chatMessages  ChatMessage[]
+}
+
+model Lobby {
+  id           Int           @id @default(autoincrement())
+  name         String
+  createdAt    DateTime      @default(now())
+  expiresAt    DateTime?
+  masterId     Int?
+  master       User?         @relation("LobbyMaster", fields: [masterId], references: [id], onDelete: Cascade)
+
+  players      LobbyPlayer[]
+  chatMessages ChatMessage[]
+  maps         Map[]
+  tokens       Token[]
+  music        Music[]
+}
+
+model LobbyPlayer {
+  id        Int      @id @default(autoincrement())
+  lobby     Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  lobbyId   Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  joinedAt  DateTime @default(now())
+}
+
+model ChatMessage {
+  id           Int      @id @default(autoincrement())
+  lobby        Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  lobbyId      Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  displayName  String
+  text         String
+  createdAt    DateTime @default(now())
+}
+
+model Map {
+  id         Int      @id @default(autoincrement())
+  lobby      Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  lobbyId    Int
+  name       String
+  url        String
+  uploadedAt DateTime @default(now())
+}
+
+model Token {
+  id         Int      @id @default(autoincrement())
+  lobby      Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  lobbyId    Int
+  name       String
+  url        String
+  uploadedAt DateTime @default(now())
+}
+
+model Music {
+  id         Int      @id @default(autoincrement())
+  lobby      Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  lobbyId    Int
+  name       String
+  url        String
+  mimeType   String
+  duration   Int      // в секундах
+  uploadedAt DateTime @default(now())
+}

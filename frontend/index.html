@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Вход – DnD World Weave</title>
+  <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
+</head>
+<body class="section">
+  <div class="container">
+    <h1 class="title has-text-centered">DnD World Weave</h1>
+    <div class="box" style="max-width: 400px; margin: auto;">
+      <div class="field">
+        <label class="label">Ваш ник</label>
+        <div class="control">
+          <input id="displayName" class="input" type="text" placeholder="Введите ник">
+        </div>
+      </div>
+      <div class="field">
+        <div class="control">
+          <button id="loginBtn" class="button is-primary is-fullwidth">
+            Войти
+          </button>
+        </div>
+      </div>
+      <p id="error" class="help is-danger"></p>
+    </div>
+  </div>
+
+  <script type="module" src="/src/index.js"></script>
+</body>
+</html>

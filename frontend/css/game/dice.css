@@ -1,0 +1,112 @@
+/* ==== Styled Dice Roll Section (dice.css) ==== */
+.dice-roll-section {
+  background: linear-gradient(135deg, #353535, #2b2b2b);
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 16px;
+  max-width: 260px;       /* <-- сузил */
+  width: 100%;
+  margin: 20px auto 0;    /* центрируем и отступ сверху */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0;
+}
+
+.dice-roll-section h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  text-align: center;
+  color: #f5f5f5;
+}
+
+/* Контейнер всех контролов */
+.dice-roll-section label,
+.dice-roll-section select,
+.dice-roll-section input,
+.dice-roll-section button {
+  display: block;
+  width: 100%;            /* теперь поля и кнопка во всю ширину */
+  box-sizing: border-box;
+}
+
+/* Метки */
+.dice-roll-section label {
+  margin: 8px 0 4px;
+  font-size: 14px;
+  color: #ccc;
+}
+
+/* Селект и инпут */
+.dice-roll-section select,
+.dice-roll-section input {
+  padding: 6px 8px;
+  background: #2b2b2b;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  text-align: center;
+}
+
+/* Кнопка броска */
+.dice-roll-section button#rollDice {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: #ffb74d;
+  color: #2b2b2b;
+  border: 1px solid #e0a832;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.dice-roll-section button#rollDice:hover {
+  background-color: #ffa726;
+}
+
+.dice-roll-section button#rollDice:active {
+  transform: scale(0.98);
+}
+
+/* Блок результатов */
+.dice-roll-section .dice-results {
+  background: #212121;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  max-height: 0;
+  padding: 0 12px;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+.dice-roll-section .dice-results:not(:empty) {
+  padding: 12px;
+  max-height: 200px;
+}
+
+/* Внутри результатов */
+.dice-roll-section .dice-results .dice-roll-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.dice-roll-section .dice-results .dice-roll-values span {
+  background: #2e2e2e;
+  color: #4caf50;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.dice-roll-section .dice-results .dice-sum {
+  text-align: right;
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd54f;
+}

@@ -1,0 +1,82 @@
+/* ==== Chat Styles ==== */
+.chat-container {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.chat-messages {
+    height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #f9f9f9;
+}
+
+.chat-message {
+    padding: 5px 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+}
+
+.user-message {
+    background: #007bff;
+    color: white;
+    align-self: flex-end;
+}
+
+.other-message {
+    background: #e0e0e0;
+    color: black;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+    background: #fff;
+    border-top: 1px solid #ccc;
+}
+
+/* Инпут чата */
+#chatInput {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 5px 8px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+}
+
+/* Кнопки «Отправить» и «Голосовой чат» */
+#sendBtn, #voiceBtn {
+    flex: 0 0 auto;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Отдельный стиль для кнопки «Отправить» */
+#sendBtn {
+    background: #007bff;
+    color: white;
+}
+
+#sendBtn:hover {
+    background: #0056b3;
+}
+
+/* Отдельный стиль для кнопки «Голосовой чат» */
+#voiceBtn {
+    background: #28a745;
+    color: white;
+    font-size: 1.1em;
+    line-height: 1;
+}
+
+#voiceBtn:hover {
+    background: #218838;
+}

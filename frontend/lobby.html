@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Лобби</title>
+    <link rel="stylesheet" href="/css/bulma.min.css" />
+    <link rel="stylesheet" href="/css/lobby.css" />
+    <link rel="stylesheet" href="/css/chat.css" />
+  </head>
+  <body>
+    <section class="section">
+      <div class="container">
+        <h1 class="title">
+          Лобби:
+          <span id="lobbyName"></span>
+        </h1>
+
+        <!-- Игроки -->
+        <h2 class="subtitle">Игроки</h2>
+        <ul id="playersList" class="menu-list"></ul>
+
+        <!-- Кнопки управления -->
+        <div class="buttons">
+          <button id="leaveBtn" class="button">Выйти</button>
+          <button id="startBtn" class="button">Старт</button>
+        </div>
+
+        <hr />
+
+        <!-- Чат -->
+        <div id="chat" class="box"></div>
+
+        <div class="chat-input-area">
+          <input
+            id="chatInput"
+            class="input"
+            type="text"
+            placeholder="Сообщение..."
+          />
+          <button id="sendBtn" class="button">Отправить</button>
+          <button id="voiceBtn" class="button">🎤</button>
+        </div>
+
+        <div id="error" class="notification is-danger is-hidden"></div>
+      </div>
+    </section>
+
+    <script type="module" src="/src/lobby.js"></script>
+    <script src="/src/voice.js"></script>
+  </body>
+</html>

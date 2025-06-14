@@ -1,0 +1,142 @@
+/* Сброс отступов и боксовой модели */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Основные стили страницы */
+body, html {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: Arial, sans-serif;
+}
+
+/* Верхняя и нижняя панели */
+.header, .footer {
+    height: 50px;
+    background: #222;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+}
+
+/* Контейнер с панелями и доской */
+.container {
+    flex: 1;
+    display: flex;
+}
+
+/* Левая панель инструментов */
+.sidebar-left {
+    width: 220px;
+    background: #333;
+    color: white;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+}
+
+.sidebar-left h3 {
+    font-size: 16px;
+    text-align: center;
+}
+
+/* Кнопки очистки и удаления */
+.sidebar-left button {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background: #f8f8f8;
+    cursor: pointer;
+}
+
+.sidebar-left button:hover {
+    background: #ddd;
+}
+
+/* Селекторы размера и категории */
+.sidebar-left select#tokenSize,
+.sidebar-left select#tokenCategory {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background: #f8f8f8;
+    cursor: pointer;
+}
+
+.sidebar-left label {
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* Центральная игровая область */
+.board-container {
+    flex: 1;
+    background: #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+canvas {
+    background: white;
+    border: 1px solid #aaa;
+    display: block;
+}
+
+/* Правая панель (за исключением чата) */
+.sidebar-right {
+    width: 300px;
+    background: #444;
+    color: white;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    align-items: stretch;
+}
+
+.sidebar-right h3 {
+    font-size: 16px;
+    text-align: center;
+}
+
+/* Галерея токенов */
+.token-gallery-section {
+    margin-top: 20px;
+}
+
+.token-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    background: #eee;
+    padding: 10px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+}
+
+.token-gallery img {
+    width: 100%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: border 0.2s ease;
+}
+
+.token-gallery img:hover,
+.token-gallery img.selected {
+    border-color: #444;
+}

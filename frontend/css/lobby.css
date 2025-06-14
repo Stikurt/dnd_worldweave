@@ -1,0 +1,105 @@
+:root {
+  --primary: #4a90e2;
+  --primary-dark: #357abd;
+  --bg-light: #f4f7fa;
+  --card-bg: #fff;
+  --text-main: #374151;
+  --radius: 0.5rem;
+  --transition: 0.25s;
+}
+
+body {
+  background: var(--bg-light);
+  color: var(--text-main);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  position: relative;
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  padding-right: 280px; /* место под сайдбар */
+}
+
+/* Заголовки */
+.title, .subtitle {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: var(--primary-dark);
+}
+
+/* Кнопки */
+.buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.buttons .button {
+  flex: 1;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.6rem;
+  font-weight: 600;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.buttons .button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e1e4e8;
+  margin: 2rem 0;
+}
+
+/* Ошибки */
+.notification.is-danger {
+  margin-top: 1rem;
+}
+.notification.is-hidden {
+  display: none !important;
+}
+
+/* === Сайдбар со списком игроков === */
+#playersList {
+  list-style: none;                  /* убираем точки */
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  top: 120px;
+  right: 20px;
+  width: 240px;
+  height: calc(100vh - 160px);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+#playersList li {
+  background: var(--bg-light);
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  cursor: default;
+  transition: background var(--transition);
+}
+
+#playersList li:hover {
+  background: var(--primary);
+  color: #fff;
+}

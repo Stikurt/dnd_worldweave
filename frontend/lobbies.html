@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Лобби – DnD One-Shot</title>
+  <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
+</head>
+<body class="section">
+  <div class="container">
+    <h1 class="title">Список лобби</h1>
+    <button id="logoutBtn" class="button is-light is-pulled-right">Выйти</button>
+    <div class="box" style="max-width: 500px; margin-bottom: 2rem;">
+      <div class="field has-addons">
+        <div class="control is-expanded">
+          <input id="newLobbyName" class="input" placeholder="Название нового лобби">
+        </div>
+        <div class="control">
+          <button id="createLobbyBtn" class="button is-primary">Создать</button>
+        </div>
+      </div>
+    </div>
+    <div id="lobbyList" class="menu"></div>
+  </div>
+
+  <script type="module" src="/src/lobbies.js"></script>
+</body>
+</html>

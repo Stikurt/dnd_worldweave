@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Игровая доска</title>
+
+    <!-- Стили -->
+    <link rel="stylesheet" href="css/game/styles.css" />
+    <link rel="stylesheet" href="css/game/dice.css" />
+
+    <link rel="stylesheet" href="css/game/chat-board.css" />
+  </head>
+
+  <body>
+    <!-- Верхняя панель -->
+    <header class="header">
+      <h2>Игровая доска</h2>
+    </header>
+
+    <!-- Основной контейнер (левая панель, доска, правая панель) -->
+    <div class="container">
+      <!-- Левая панель инструментов -->
+      <aside class="sidebar-left">
+        <h3>Инструменты</h3>
+
+        <!-- Галерея токенов -->
+        <div class="token-gallery-section">
+          <label for="tokenCategory">Категория токенов:</label>
+          <select id="tokenCategory">
+            <option value="Players_and_Npcs">Игроки и НПС</option>
+            <option value="Enemies">Враги</option>
+          </select>
+
+          <div id="tokenGallery" class="token-gallery">
+            <!-- картинки токенов загружаются сюда -->
+          </div>
+        </div>
+
+        <!-- Размер токена -->
+        <div class="token-size-section">
+          <label for="tokenSize">Размер токена:</label>
+          <select id="tokenSize">
+            <option value="20">Маленький</option>
+            <option value="30">Средний</option>
+            <option value="40">Большой</option>
+          </select>
+        </div>
+
+        <!-- Кнопки управления токенами -->
+        <button id="deleteToken">Удалить токен</button>
+        <button id="clearBoard">Очистить поле</button>
+      </aside>
+
+      <!-- Центральная игровая доска -->
+      <main class="board-container">
+        <canvas id="gameBoard" width="800" height="600"></canvas>
+      </main>
+
+      <!-- Правая панель: чат, игроки, кубики -->
+      <aside class="sidebar-right">
+        <h3>Чат / Голос / Кубики</h3>
+
+        <!-- Чат -->
+        <div class="chat-container">
+          <div id="chatBox" class="chat-messages"></div>
+          <div class="chat-input-container">
+            <input
+              type="text"
+              id="chatInput"
+              placeholder="Введите сообщение…"
+            />
+            <button id="sendBtn">Отправить</button>
+            <button id="voiceBtn" title="Голосовой чат">🎤</button>
+          </div>
+        </div>
+
+        <!-- Броски кубиков -->
+        <div class="dice-roll-section">
+          <h3>Броски кубиков</h3>
+          <label for="diceType">Тип кубика:</label>
+          <select id="diceType">
+            <option value="4">d4</option>
+            <option value="6">d6</option>
+            <option value="8">d8</option>
+            <option value="10">d10</option>
+            <option value="12">d12</option>
+            <option value="20" selected>d20</option>
+            <option value="100">d100</option>
+          </select>
+
+          <label for="diceCount">Количество:</label>
+          <input
+            type="number"
+            id="diceCount"
+            min="1"
+            max="10"
+            value="1"
+            step="1"
+          />
+
+          <button id="rollDice">Бросить</button>
+          <div id="diceResults" class="dice-results"></div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Нижняя панель (если нужна) -->
+    <footer class="footer"></footer>
+
+    <!-- Главное: модульный скрипт, который импортит все остальные -->
+    <script type="module" src="./src/game.js"></script>
+  </body>
+</html>
